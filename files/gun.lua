@@ -4,6 +4,8 @@ local mod = modloader:register("ban_spells")
 
 local func = mod.functions:load("draw_action")
 func:disable_original()
+
+local on_action_cast = mod.events:add("on_action_cast")
 func:append(function (instant_reload_if_empty)
     local action = nil
 
@@ -29,10 +31,10 @@ func:append(function (instant_reload_if_empty)
 
         table.remove( deck, 1 )
 
-        local banned = GlobalsGetValue("997956878_BANNED_SPELLS_IDS", "")
-
-        if string.find(banned , '@' .. action.id .. '@' ) ~= nil then
-            return false
+        for _, value in pairs(on_action_cast(action.id)) do
+            if not value then
+                return false
+            end
         end
         
         -- update mana
@@ -67,10 +69,10 @@ end)
 local func = mod.functions:load("_play_permanent_card")
 func:disable_original()
 func:append(function (action_id)
-    local banned = GlobalsGetValue("997956878_BANNED_SPELLS_IDS", "")
-
-    if string.find(banned , '@' .. action_id .. '@' ) ~= nil then
-        return
+    for _, value in pairs(on_action_cast(action_id)) do
+        if not value then
+            return
+        end
     end
 
     for i,action in ipairs(actions) do
@@ -87,4 +89,14 @@ func:append(function (action_id)
             break
         end
     end
+end)
+
+on_action_cast:subscribe(function (action_id)
+    local banned = GlobalsGetValue("997956878_BANNED_SPELLS_IDS", "")
+
+    if string.find(banned , '@' .. action_id .. '@' ) ~= nil then
+        return false
+    end
+
+    return true
 end)

@@ -58,6 +58,8 @@ dofile_once("mods/modloader/files/gui/image.lua")
 dofile_once("mods/modloader/files/gui/layout.lua")
 dofile_once("mods/modloader/files/gui/button.lua")
 
+dofile_once("data/scripts/lib/utilities.lua")
+
 -- Options 
 local hide_spell_selection = ModSettingGet("ban_spells.SPELLS_PANEL_HIDE_DEFAULT")
 local hide_default = ModSettingGet("ban_spells.HIDE_DEFAULT")
@@ -111,6 +113,7 @@ function panel:initialize(gui)
 
 
     -- Banned spells panel
+    local spell_buttons_by_id = {}
     local banned_spell_buttons = {}
     local banned_spells = grid:new{
         n_rows=banned_n_rows,
@@ -126,6 +129,10 @@ function panel:initialize(gui)
                 if not button.in_container then
                     button.in_container = true
                     self:add_child(button)
+
+                    local other_button = spell_buttons_by_id[spell.id]
+                    other_button:add_option(GUI_OPTION.DrawSemiTransparent)
+                    other_button:add_option(GUI_OPTION.DrawNoHoverAnimation)
                 end
 
                 button.idx = i
@@ -149,6 +156,8 @@ function panel:initialize(gui)
 
                 self.in_container = false
                 banned_spells:remove_child(self)
+
+                spell_buttons_by_id[spell.id].options = {}
             end
         }
     end
@@ -167,7 +176,7 @@ function panel:initialize(gui)
     }
 
     for i, spell in ipairs(sorted_actions) do
-        table.insert(spell_buttons, image_button:new{
+        local button = image_button:new{
             spell=spell,
             sprite_filename=spell.sprite,
             on_hover=spell_hover_function,
@@ -178,7 +187,10 @@ function panel:initialize(gui)
                     _set_globals()
                 end
             end
-        })
+        }
+
+        table.insert(spell_buttons, button)
+        spell_buttons_by_id[spell.id] = button
     end
 
     
